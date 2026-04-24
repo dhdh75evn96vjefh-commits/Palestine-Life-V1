@@ -98,3 +98,18 @@ def main_menu():
 
 if __name__ == "__main__":
     main_menu()
+# --- داخل حلقة المحاكاة في main.py ---
+
+# فحص إذا كان هناك مستشفى في المدينة
+has_hospital = any(b.b_type == "مستشفى" for b in my_city.buildings)
+
+# محاكاة حدث عشوائي (ظهور مرض)
+if random.random() < 0.05: # احتمالية 5% ظهور مرض كل ساعة
+    print("🚨 تنبيه صحي: انتشرت عدوى موسمية في المدينة!")
+    for r in pop_sys.residents:
+        r.energy -= 20 # المرض ينهك الطاقة
+
+# إذا وجد مستشفى، يتم علاج السكان تلقائياً
+if has_hospital:
+    for r in pop_sys.residents:
+        r.energy = min(100, r.energy + 10)
