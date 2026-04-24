@@ -1,115 +1,107 @@
-# --- استدعاء كافة الأنظمة ---
-try:
-    from building_system import Building
-    from city_manager import City
-    from job_system import Engineering, CyberSecurity, Medical
-    from security import SecuritySystem
-    from economy import Bank
-    from population import PopulationManager
-except ImportError as e:
-    print(f"❌ خطأ: تأكد من وجود جميع الملفات في المجلد! ({e})")
+import os
+import random
+import time
+from building_system import Building
+from city_manager import City
+from job_system import Engineering, CyberSecurity, Medical
+from security import SecuritySystem
+from economy import Bank
+from population import PopulationManager
+from utilities import PowerGrid
 
 def main_menu():
     # 1. إعداد الأنظمة الأساسية
     my_city = City("فلسطين الحرة")
     sec_sys = SecuritySystem()
-    my_bank = Bank(25000)  # ميزانية البداية
+    my_bank = Bank(35000) # رصيدك الحالي من الصور
     pop_sys = PopulationManager()
+    power_sys = PowerGrid()
     
-    # 2. تعريف المختصين (الوظائف)
+    # 2. تعريف المختصين
     cyber = CyberSecurity("مدير حماية")
     eng = Engineering("مهندس معماري")
-
+    
     while True:
-        # --- محرك الحياة (Life Engine) ---
-        # فحص توفر المطاعم (تجاري) ومحطات المياه (خدمي)
+        # تنظيف الشاشة لجعل الواجهة احترافية
+        os.system('clear' if os.name == 'posix' else 'cls')
+        
+        # عرض شريط الحالة العلوي
+        total_pop = len(pop_sys.residents)
+        print("="*60)
+        print(f"🏙️  المدينة: {my_city.name} | 💰 البنك: {my_bank.balance} $ | 👥 السكان: {total_pop}")
+        print(f"⚡ الطاقة: {'متصلة' if power_sys.is_online else 'مقطوعة'} | 🛡️ الحماية: {sec_sys.firewall_level}")
+        print("="*60)
+
+        # محاكة الحياة (Life Engine)
         has_food = any(b.b_type == "تجاري" for b in my_city.buildings)
         has_water = any(b.b_type == "خدمي" for b in my_city.buildings)
-        
-        # محاكاة الساعة وتأثيرها على السكان
-        pop_sys.simulate_hour(has_food, has_water)
-        
-        # تحصيل ضرائب تلقائية (50$ من كل ساكن كل ساعة لتمويل المدينة)
-        if len(pop_sys.residents) > 0:
-            tax = len(pop_sys.residents) * 50
-            my_bank.deposit(tax)
+        has_hospital = any(b.b_type == "مستشفى" for b in my_city.buildings)
 
-        # 3. واجهة المستخدم (UI)
-        print("\n" + "═"*60)
-        total_pop = len(pop_sys.residents)
-        avg_energy = sum(r.energy for r in pop_sys.residents) / total_pop if total_pop > 0 else 0
+        # تحديث حالة السكان (الجوع، العطش، الصحة)
+        pop_sys.simulate_hour(has_food, has_water)
+
+        # منطق الكهرباء وتأثيره على المستشفى
+        if has_hospital and power_sys.is_online:
+            for r in pop_sys.residents:
+                r.energy = min(100, r.energy + 10)
+
+        # تحصيل الضرائب ($50 لكل ساكن)
+        if total_pop > 0:
+            tax_income = total_pop * 50
+            my_bank.deposit(tax_income)
+
+        # عرض القائمة
+        print("\n--- لوحة التحكم في المدينة ---")
+        print("1. 🏗️ بناء منشأة (سكن، تجاري، خدمي، مستشفى)")
+        print("2. 🛡️ تأمين النظام (رفع الحماية + مكافأة)")
+        print("3. 📊 تقرير المدينة (حالة السكان والمباني)")
+        print("4. 👨‍👩‍👧‍👦 جذب مهاجرين جُدد")
+        print("5. ⚡ إدارة محطة الطاقة")
+        print("6. 🚪 حفظ وخروج")
         
-        print(f"🕒 الساعة: {pop_sys.game_hour}:00 | 💰 الخزينة: {my_bank.get_balance()} $")
-        print(f"👥 السكان: {total_pop} | 🔋 الطاقة: {avg_energy:.1f}% | 🛡️ الأمن: {sec_sys.firewall_level}")
-        
-        # نظام التنبيهات الأمنية
-        if sec_sys.scan_for_threats():
-            print("⚠️ [تنبيه]: رصد محاولة اختراق للأنظمة المالية!")
-        else:
-            print("✅ [النظام]: الحالة الأمنية مستقرة")
-            
-        print("-" * 30)
-        print("1. 🏗️  بناء منشأة (5000$) - [سكن/تجاري/خدمي/مستشفى]")
-        print("2. 🛡️  تفعيل بروتوكول حماية (+2000$ مكافأة أمنية)")
-        print("3. 📊  تقرير السكان والمدينة (مراقبة الجوع والعطش)")
-        print("4. 👥  جذب مهاجرين جدد (إضافة سكان يدوياً)")
-        print("5. 🚪  خروج وحفظ التقدم")
-        print("═"*60)
-        
-        choice = input("اختر الإجراء القادم: ")
+        choice = input("\n📥 اختر إجراءً: ")
 
         if choice == "1":
-            if my_bank.withdraw(5000):
-                name = input("اسم المبنى: ")
-                print("أنواع المباني: (سكن: يجذب ناس | تجاري: يوفر أكل | خدمي: يوفر ماء)")
-                b_type = input("النوع: ")
-                new_b = Building(name, b_type, 5000, 100)
-                my_city.add_building(new_b)
-                new_b.construct()
-                
-                if b_type == "سكن":
-                    pop_sys.add_residents(10)
-                    print("🏠 انتقل 10 سكان جدد للعيش في مدينتك!")
+            b_type = input("نوع المبنى: ")
+            cost = 5000
+            # ميزة المهندس: تقليل التكلفة
+            if any(isinstance(r, Engineering) for r in pop_sys.residents):
+                cost = 4000
             
+            if my_bank.balance >= cost:
+                my_bank.balance -= cost
+                my_city.add_building(Building(b_type))
+                print(f"✅ تم بناء {b_type} بنجاح!")
+            else:
+                print("❌ لا يوجد رصيد كافٍ!")
+
         elif choice == "2":
             print(cyber.secure_system())
             sec_sys.firewall_level += 1
             my_bank.deposit(2000)
-            print("💰 تم إيداع مكافأة الحماية في الخزينة.")
 
         elif choice == "3":
             my_city.show_all_buildings()
             if total_pop > 0:
-                print(f"\n📊 حالة عينة من السكان ({pop_sys.residents[0].name}):")
-                print(f"   الحالة: {pop_sys.residents[0].status}")
-                print(f"   الجوع: {pop_sys.residents[0].hunger}/100 | العطش: {pop_sys.residents[0].thirst}/100")
-            else:
-                print("\n⚠️ لا يوجد سكان في المدينة حالياً.")
+                print(f"\n📊 حالة عينة من السكان: {pop_sys.residents[0].status}")
+            input("\nاضغط Enter للعودة...")
 
         elif choice == "4":
             pop_sys.add_residents(5)
-            print("👨‍👩‍👧‍👦 رحب بـ 5 سكان جدد في المدينة.")
+            print("🆕 رحب بـ 5 سكان جُدد في المدينة!")
 
         elif choice == "5":
-            print("💾 جاري الحفظ.. نراك لاحقاً في فلسطين الحرة!")
+            if my_bank.balance >= 10000:
+                my_bank.balance -= 10000
+                print(power_sys.build_power_plant())
+            else:
+                print("❌ بناء محطة الطاقة يحتاج 10,000 $")
+
+        elif choice == "6":
+            print("💾 جاري حفظ التقدم في فلسطين الحرة...")
             break
-        else:
-            print("❌ اختيار غير صحيح!")
+        
+        time.sleep(1)
 
 if __name__ == "__main__":
     main_menu()
-# --- داخل حلقة المحاكاة في main.py ---
-
-# فحص إذا كان هناك مستشفى في المدينة
-has_hospital = any(b.b_type == "مستشفى" for b in my_city.buildings)
-
-# محاكاة حدث عشوائي (ظهور مرض)
-if random.random() < 0.05: # احتمالية 5% ظهور مرض كل ساعة
-    print("🚨 تنبيه صحي: انتشرت عدوى موسمية في المدينة!")
-    for r in pop_sys.residents:
-        r.energy -= 20 # المرض ينهك الطاقة
-
-# إذا وجد مستشفى، يتم علاج السكان تلقائياً
-if has_hospital:
-    for r in pop_sys.residents:
-        r.energy = min(100, r.energy + 10)
