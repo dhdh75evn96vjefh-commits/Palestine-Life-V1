@@ -1,4 +1,40 @@
 import os
+from colorama import Fore, Style, init
+from save_system import SaveManager
+from events import WorldEvents
+
+init(autoreset=True) # تفعيل الألوان تلقائياً
+save_mgr = SaveManager()
+weather = WorldEvents()
+
+# عند تشغيل اللعبة، حاول تحميل الحفظ
+saved_data = save_mgr.load()
+if saved_data:
+    print(f"{Fore.GREEN}♻️ تم استعادة بيانات المدينة السابقة!")
+    # هنا تضع منطق استرجاع الرصيد والسكان من saved_data
+
+while True:
+    os.system('clear') # تنظيف الشاشة لجعل الواجهة أجمل
+    current_env = weather.update_event()
+    
+    print(f"{current_env['color']}{'='*40}")
+    print(f"{current_env['color']}📍 حدث الآن: {current_env['msg']}")
+    print(f"{current_env['color']}{'='*40}")
+    
+    print(f"{Fore.GREEN}💰 الخزينة: {my_bank.balance} $")
+    print(f"{Fore.CYAN}👥 السكان: {len(pop_sys.residents)}")
+    print(f"{Fore.YELLOW}⚡ الطاقة: {'مستقرة' if util.is_online else 'منقطعة'}")
+    print("-" * 40)
+    print(f"{Fore.WHITE}1. بناء | 2. تأمين | 3. تقرير | 4. هجرة | 5. حفظ وخروج")
+    
+    choice = input(f"{Fore.MAGENTA}🎮 اختر قرارك: ")
+    
+    if choice == '5':
+        # منطق الحفظ قبل الخروج
+        data_to_save = {"balance": my_bank.balance, "pop_count": len(pop_sys.residents)}
+        save_mgr.save(data_to_save)
+        break
+import os
 import random
 import time
 from building_system import Building
