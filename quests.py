@@ -1,16 +1,17 @@
 class QuestManager:
     def __init__(self):
         self.active_quests = [
-            {"goal": "إيواء 50 ساكن", "reward": 10000, "completed": False},
-            {"goal": "بناء 3 منشآت تجارية", "reward": 15000, "completed": False}
+            {"goal": "إيواء 5 سكان جُدد", "target": 5, "reward": 5000, "completed": False}
         ]
 
-    def check_progress(self, city, bank):
+    # تأكد أن الاسم هنا 'check_quests' بالضبط
+    def check_quests(self, city, pop_sys, power_sys, bank):
+        status_updates = []
         for q in self.active_quests:
             if not q["completed"]:
-                # منطق التحقق (مثال: عدد المباني)
-                if len(city.buildings) >= 3:
+                # مثال للتحقق من عدد السكان
+                if len(pop_sys.residents) >= q["target"]:
                     q["completed"] = True
                     bank.deposit(q["reward"])
-                    print(f"🎊 مبروك! أنجزت مهمة: {q['goal']} وحصلت على {q['reward']}$")
-
+                    status_updates.append(f"🎊 إنجاز! {q['goal']} | المكافأة: {q['reward']}$")
+        return status_updates
