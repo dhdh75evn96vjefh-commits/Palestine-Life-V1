@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 import os
 import time
-from Colors import Colors
-from Config import INITIAL_BALANCE, INITIAL_POPULATION, INITIAL_ENERGY, INITIAL_SECURITY, BUILDING_COSTS
-from Bank import Bank
-from Buildings import BuildingManager
-from Population import Population
-from Energy import EnergyGrid
-from Market import EnergyMarket
-from Security import SecuritySystem
-from QuestManager import QuestManager
+# استيراد الألوان (تأكد أن اسم الملف Colors.py أو colors.py)
+try:
+    from colors import Colors
+except ImportError:
+    from Colors import Colors
+
+# استيراد الأنظمة (تأكد أن أسماء الملفات مطابقة لما في المجلد)
+from bank import Bank
+from buildings import BuildingManager
+from population import Population
+from energy import EnergyGrid
+from market import EnergyMarket
+from security import SecuritySystem
+from quests import QuestManager
+from config import INITIAL_BALANCE, INITIAL_POPULATION, INITIAL_ENERGY, INITIAL_SECURITY, BUILDING_COSTS
 
 class PalestineLife:
     def __init__(self):
-        # تهيئة جميع الأنظمة بناءً على ملفاتك
         self.bank = Bank(INITIAL_BALANCE)
         self.buildings = BuildingManager()
         self.population = Population(INITIAL_POPULATION)
@@ -27,110 +32,82 @@ class PalestineLife:
         os.system('clear' if os.name != 'nt' else 'cls')
     
     def display_header(self):
-        print(f"""
-{Colors.GREEN}╔══════════════════════════════════════════════╗
-║        🏙️  فلسطين لايف - Palestine Life       ║
-║           نسخة المبرمج المحترف V1.0           ║
-╚══════════════════════════════════════════════╝{Colors.RESET}""")
+        print(f"{Colors.GREEN}======================================")
+        print(f"{Colors.WHITE}   PALESTINE LIFE - فلسطين لايف V1.0  ")
+        print(f"{Colors.GREEN}======================================")
     
-    def display_status_bar(self):
-        # شريط حالة سريع يظهر في كل دورة
-        print(f"{Colors.YELLOW}الدور: {self.turn} | {Colors.GREEN}الخزينة: ${self.bank.balance:,.0f} | {Colors.CYAN}السكان: {self.population.population}")
-        print(f"{Colors.BLUE}الطاقة: {self.energy.total_stored:.1f} | {Colors.RED}الأمن: {self.security.security_level}%")
-        print(f"{Colors.MAGENTA}══════════════════════════════════════════════")
+    def display_status(self):
+        # عرض الحالة بشكل مبسط لضمان القراءة في Termux
+        print(f"{Colors.CYAN}[Turn: {self.turn}] | [Cash: ${self.bank.balance:,.0f}]")
+        print(f"{Colors.YELLOW}[Pop: {self.population.population}] | [Energy: {self.energy.total_stored:.1f}]")
+        print(f"{Colors.MAGENTA}--------------------------------------")
 
-    def run_turn_updates(self):
-        """تحديث المحاكاة عند الانتقال للدور التالي"""
-        self.turn += 1
-        print(f"\n{Colors.YELLOW}⏳ جاري معالجة بيانات الدور الجديد...")
-        
-        # 1. تحديث الأمن وفحص الهجمات
-        self.security.update_security_level(self.buildings.buildings)
-        self.security.scan_threats(self.bank, self.buildings.buildings)
-        
-        # 2. تحديث الطاقة والسكان
-        self.energy.update(self.buildings.buildings, self.population.population)
-        self.population.update(self.buildings.buildings)
-        
-        # 3. تحديث سوق الطاقة
-        self.market.update_market()
-        
-        # 4. فحص المهام ومنح المكافآت
-        game_state = {
-            "population": self.population.population,
-            "commercial_count": len([b for b in self.buildings.buildings if b.type in ["تجاري", "فندق"]]),
-            "security": self.security.security_level
-        }
-        self.quests.check_quests(game_state, self.bank)
-        
-        time.sleep(1.5)
+    def display_menu(self):
+        # القائمة مرتبة لضمان ظهور رقم 4
+        print(f"{Colors.WHITE}1. [Build] بناء منشأة جديدة")
+        print(f"{Colors.WHITE}2. [Upgrade] ترقية منشأة")
+        print(f"{Colors.WHITE}3. [Market] سوق الطاقة والبيع")
+        print(f"{Colors.WHITE}4. [Bank] إدارة الحساب البنكي") # تم إضافة الرقم 4 هنا
+        print(f"{Colors.WHITE}5. [Status] التقارير والأمن")
+        print(f"{Colors.WHITE}6. [Quests] المهام والإنجازات")
+        print(f"{Colors.CYAN}7. [Next Turn] إنهاء الدور")
+        print(f"{Colors.RED}0. [Exit] خروج وحفظ")
+        print(f"{Colors.MAGENTA}--------------------------------------")
 
     def run(self):
         while True:
             self.clear_screen()
             self.display_header()
-            self.display_status_bar()
+            self.display_status()
+            self.display_menu()
             
-            print(f"{Colors.WHITE}1. 🏗️  بناء منشأة جديدة")
-            print(f"{Colors.WHITE}2. ⬆️  ترقية منشأة موجودة")
-            print(f"{Colors.WHITE}3. 🏦  إدارة البنك والودائع")
-            print(f"{Colors.WHITE}4. 💹  سوق الطاقة (بيع الفائض)")
-            print(f"{Colors.WHITE}5. 🛡️  المركز الأمني والتقارير")
-            print(f"{Colors.WHITE}6. 📜  المهام والإنجازات")
-            print(f"{Colors.CYAN}7. ⏭️  إنهاء الدور (تحديث الحالة)")
-            print(f"{Colors.RED}0. 🚪  خروج وحفظ")
-            
-            choice = input(f"\n{Colors.YELLOW}🕹️  اختر الأكشن: ").strip()
+            choice = input(f"{Colors.YELLOW}🕹️ Choice/اختر: ").strip()
             
             if choice == "1":
-                print(f"\n{Colors.CYAN}قائمة التكاليف:")
-                for b, info in BUILDING_COSTS.items():
-                    print(f"- {b}: ${info['base']:,}")
-                b_type = input("\nاكتب نوع المبنى: ")
-                name = input("اعطِ اسماً للمبنى: ")
+                # منطق البناء
+                print("\nTypes: سكني, تجاري, مصنع, فندق, مستشفى, مركز_طاقة")
+                b_type = input("Type/النوع: ")
+                name = input("Name/الاسم: ")
                 self.buildings.add_building(b_type, name, self.bank)
                 time.sleep(2)
                 
             elif choice == "2":
                 self.buildings.display_buildings()
                 try:
-                    idx = int(input("رقم المبنى للترقية: ")) - 1
+                    idx = int(input("Number/الرقم: ")) - 1
                     self.buildings.upgrade_building(idx, self.bank)
-                except: print(Colors.error("مدخل غير صحيح"))
+                except: print("Error!")
                 time.sleep(2)
 
             elif choice == "3":
-                self.bank.display()
-                print("1. إيداع | 2. سحب")
-                action = input("اختر: ")
-                try:
-                    amt = float(input("المبلغ: $"))
-                    if action == "1": self.bank.deposit(amt)
-                    else: self.bank.withdraw(amt)
-                except: print(Colors.error("خطأ في المبلغ"))
+                self.market.display()
+                self.market.sell_energy(self.energy, self.bank)
                 time.sleep(2)
 
-            elif choice == "4":
-                self.market.display()
-                confirm = input("هل تريد بيع كل الفائض؟ (نعم/لا): ")
-                if confirm.lower() in ['نعم', 'y']:
-                    self.market.sell_energy(self.energy, self.bank)
-                time.sleep(2)
+            elif choice == "4": # تفعيل خيار البنك
+                self.bank.display()
+                input("Press Enter to return...")
 
             elif choice == "5":
                 self.security.display()
                 self.population.display()
-                input("\nاضغط Enter للعودة...")
+                input("Press Enter to return...")
 
             elif choice == "6":
                 self.quests.display()
-                input("\nاضغط Enter للعودة...")
+                input("Press Enter to return...")
 
             elif choice == "7":
-                self.run_turn_updates()
+                self.turn += 1
+                # تحديثات الدور
+                self.energy.update(self.buildings.buildings, self.population.population)
+                self.population.update(self.buildings.buildings)
+                self.security.scan_threats(self.bank, self.buildings.buildings)
+                print(f"{Colors.GREEN}Done! الدور التالي...")
+                time.sleep(1.5)
                 
             elif choice == "0":
-                print(f"{Colors.GREEN}تم حفظ تقدمك في مدينة فلسطين الحرة. إلى اللقاء! 🇵🇸")
+                print("🇵🇸 شكراً للعب! فلسطين حرة")
                 break
 
 if __name__ == "__main__":
