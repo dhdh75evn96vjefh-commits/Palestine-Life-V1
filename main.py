@@ -1,73 +1,81 @@
- # --- استدعاء الأنظمة (بدون تكرار) ---
-from building_system import Building
-from city_manager import City
-from job_system import Engineering, CyberSecurity, Medical
-from security import SecuritySystem
-from economy import Bank
+# --- استدعاء الأنظمة الشاملة ---
+try:
+    from building_system import Building
+    from city_manager import City
+    from job_system import Engineering, CyberSecurity, Medical
+    from security import SecuritySystem
+    from economy import Bank
+    from population import PopulationManager # استدعاء نظام السكان
+except ImportError as e:
+    print(f"❌ خطأ في التحميل: تأكد من وجود جميع الملفات! {e}")
 
 def main_menu():
-    # 1. إعداد المدينة والأنظمة المالية والأمنية
+    # إعداد الأنظمة
     my_city = City("فلسطين الحرة")
     sec_sys = SecuritySystem()
-    my_bank = Bank(20000)  # رصيد البداية لدعم تطوير المدينة
+    my_bank = Bank(20000)
+    pop_sys = PopulationManager()
     
-    # 2. تجهيز الطاقم المهني
-    eng = Engineering("معماري")
     cyber = CyberSecurity("مدير حماية")
     doc = Medical("جراح")
 
     while True:
-        print("\n" + "═"*50)
-        # عرض شريط الحالة العلوي
-        current_balance = my_bank.get_balance()
-        print(f"💰 الميزانية: {current_balance} $ | 🛡️ مستوى الحماية: {sec_sys.firewall_level}")
+        # محاكاة مرور الوقت وتأثيره على السكان
+        # نتحقق إذا كان هناك "مبنى تجاري" (مطعم) لتغذية السكان
+        has_food = any(b.b_type == "تجاري" for b in my_city.buildings)
+        pop_sys.simulate_hour(has_food)
         
-        # محرك الفحص الأمني التلقائي
+        # حساب الإحصائيات
+        total_pop = len(pop_sys.residents)
+        avg_energy = sum(r.energy for r in pop_sys.residents) / total_pop if total_pop > 0 else 0
+        
+        print("\n" + "═"*55)
+        print(f"🕒 الساعة: {pop_sys.game_hour}:00 | 💰 الرصيد: {my_bank.get_balance()} $")
+        print(f"👥 السكان: {total_pop} | 🔋 طاقة الشعب: {avg_energy:.1f}% | 🛡️ الأمن: {sec_sys.firewall_level}")
+        
         if sec_sys.scan_for_threats():
-            print("⚠️  [تنبيه أمني]: رصد محاولة اختراق نشطة!")
-        else:
-            print("✅ [النظام]: الحالة مستقرة")
+            print("⚠️  تنبيه أمني: هجوم سيبراني مرصود!")
             
-        print("-" * 20)
-        print(f"--- لوحة تحكم: {my_city.city_name} ---")
-        print("1. 🏗️  بناء منشأة جديدة (التكلفة: 5000 $)")
-        print("2. 🗺️  عرض خريطة المدينة والمباني")
-        print("3. 🛡️  تأمين الأنظمة (مهمة الأمن - ربح 2000 $)")
-        print("4. 🏥  فحص القطاع الصحي (مهمة الطبيب)")
-        print("5. 🚪  خروج وحفظ التقدم")
-        print("═"*50)
-        
-        choice = input("ما هو إجراءك القادم؟ : ")
+        print("-" * 25)
+        print("1. 🏗️  بناء منشأة (التكلفة 5000 $)")
+        print("2. 👥  إضافة سكان (هجرة للمدينة)")
+        print("3. 🛡️  تأمين النظام (ربح 2000 $)")
+        print("4. 🗺️  عرض حالة المدينة والسكان")
+        print("5. 🚪  خروج وحفظ")
+        print("═"*55)
+
+        choice = input("ما هو قرارك القادم؟ : ")
 
         if choice == "1":
             if my_bank.withdraw(5000):
                 name = input("اسم المبنى: ")
-                b_type = input("النوع (سكن/تجاري/حكومي): ")
+                b_type = input("النوع (سكن/تجاري/مستشفى): ")
                 new_b = Building(name, b_type, 5000, 100)
                 my_city.add_building(new_b)
                 new_b.construct()
-                print(f"✨ تم بناء {name} وإضافته للمخطط.")
+                # عند بناء سكن، يزداد السكان تلقائياً
+                if b_type == "سكن":
+                    pop_sys.add_residents(10)
+                    print("🏠 انتقل 10 سكان جدد للعيش في المدينة!")
             
         elif choice == "2":
-            my_city.show_all_buildings()
-            
+            pop_sys.add_residents(5)
+            print("👨‍👩‍👧‍👦 رحب بـ 5 سكان جدد في مدينتك.")
+
         elif choice == "3":
-            # تفعيل مهارات الأمن السيبراني
             print(cyber.secure_system())
             sec_sys.firewall_level += 1
-            my_bank.deposit(2000) # راتب مقابل الحماية
-            print("💰 تم إيداع مكافأة الحماية في رصيدك.")
+            my_bank.deposit(2000)
 
         elif choice == "4":
-            # تفعيل مهارات الطبيب
-            print(doc.heal())
-            print("👨‍⚕️ التقرير الطبي: المدينة آمنة صحياً.")
+            my_city.show_all_buildings()
+            if total_pop > 0:
+                print(f"📊 حالة أول ساكن ({pop_sys.residents[0].name}):")
+                print(f"   الجوع: {pop_sys.residents[0].hunger} | الطاقة: {pop_sys.residents[0].energy}")
 
         elif choice == "5":
-            print("💾 جاري حفظ البيانات... نراك لاحقاً في فلسطين الحرة!")
+            print("💾 جاري الحفظ.. نراك في النسخة القادمة!")
             break
-        else:
-            print("❌ خيار غير صحيح، حاول مرة أخرى.")
 
 if __name__ == "__main__":
     main_menu()
