@@ -54,5 +54,19 @@ if __name__ == "__main__":
     print(employee1.get_permit())
     
     print(f"الموظف الثاني تخصص: {employee2.specialty} براتب {employee2.salary}")
+# --- فرع الأمن السيبراني ---
+class CyberSecurity(Job):
+    def __init__(self, specialty):
+        # تخصصات الأمن السيبراني
+        specialties = {
+            "مختبر اختراق": 9000,
+            "محلل بيانات": 7500,
+            "مدير حماية": 11000
+        }
+        self.specialty = specialty
+        super().__init__("الأمن السيبراني", specialties.get(specialty, 6000))
+
+    def secure_system(self):
+        return f"🛡️ تم تفعيل بروتوكولات الحماية لفرع {self.specialty}."
 
 
