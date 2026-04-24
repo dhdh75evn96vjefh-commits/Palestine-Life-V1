@@ -2,29 +2,49 @@ from building_system import Building
 from city_manager import City
 from job_system import Engineering, Medical
 
-def start_simulation():
-    print("--- مرحباً بك في مشروع معدن فلسطين (النسخة الأولى) ---")
-    
-    # 1. إنشاء المدينة
+def main_menu():
     my_city = City("فلسطين الحرة")
-
-    # 2. إنشاء شخصية مهندس معماري
-    engineer_job = Engineering("معماري")
-    print(f"تم تعيين مهندس معماري براتب: {engineer_job.salary}")
-
-    # 3. إنشاء مبنى جديد كمخطط
-    new_hospital = Building("مستشفى الشفاء", "صحي", 120000, 300)
+    # إنشاء موظف افتراضي لتبدأ به
+    engineer = Engineering("معماري")
     
-    # 4. إضافة المبنى للمدينة
-    my_city.add_building(new_hospital)
+    while True:
+        print("\n" + "="*30)
+        print(f" مرحباً بك في لوحة تحكم {my_city.city_name} ")
+        print("="*30)
+        print("1. إنشاء مبنى جديد")
+        print("2. عرض خريطة المدينة")
+        print("3. الاستعلام عن ميزانية المشروع")
+        print("4. خروج")
+        
+        choice = input("اختر رقم العملية: ")
 
-    # 5. استخدام صلاحيات المهندس للبناء
-    print(engineer_job.get_permit())
-    new_hospital.construct()
+        if choice == "1":
+            name = input("اسم المبنى: ")
+            b_type = input("نوع المبنى (سكن/تجاري/صحي): ")
+            price = int(input("تكلفة البناء: "))
+            capacity = int(input("السعة: "))
+            
+            new_b = Building(name, b_type, price, capacity)
+            my_city.add_building(new_b)
+            
+            confirm = input("هل تريد البدء بالبناء الآن؟ (نعم/لا): ")
+            if confirm == "نعم":
+                new_b.construct()
+                
+        elif choice == "2":
+            my_city.show_all_buildings()
+            
+        elif choice == "3":
+            print(f"إجمالي القيمة الاستثمارية للمباني: {my_city.total_value()}")
+            print(f"راتب المهندس الحالي: {engineer.salary}")
 
-    # 6. عرض حالة المدينة النهائية
-    my_city.show_all_buildings()
+        elif choice == "4":
+            print("جاري حفظ البيانات والخروج... وداعاً!")
+            break
+        else:
+            print("اختيار غير صحيح، حاول مرة أخرى.")
 
 if __name__ == "__main__":
-    start_simulation()
+    main_menu()
+
 
