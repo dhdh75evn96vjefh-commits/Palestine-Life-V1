@@ -28,7 +28,7 @@ class PalestineLife:
         self.population = Population(INITIAL_POPULATION)
         self.energy = EnergyGrid()
         self.market = EnergyMarket()
-        self.security = SecuritySystem()
+        self.security = SecuritySystem(100)
         self.quests = QuestManager()
         self.events = EventManager()
         self.disasters = DisasterManager()
